@@ -179,20 +179,14 @@ class FileLister {
         srand((double)microtime() * 1000000); /* for MCRYPT_RAND */
         $key = md5($key); /* to improve variance */
 
-        /* open module, create IV */
-        $td = mcrypt_module_open('des','','cfb','');
-        $key = substr($key,0,mcrypt_enc_get_key_size($td));
-        $iv_size = mcrypt_enc_get_iv_size($td);
-        $iv = mcrypt_create_iv($iv_size,MCRYPT_RAND);
-
-        /* initialize encryption handle */
-        if (mcrypt_generic_init($td,$key,$iv) != -1) {
-            /* Encrypt data */
-            $c_t = mcrypt_generic($td,$str);
-            mcrypt_generic_deinit($td);
-            mcrypt_module_close($td);
-            $c_t = $iv.$c_t;
-            return urlencode($c_t);
+        $cipher = "DES-CFB";
+        if (in_array($cipher, openssl_get_cipher_methods()))
+        {
+            $ivlen = openssl_cipher_iv_length($cipher);
+            $iv = openssl_random_pseudo_bytes($ivlen);
+            $ciphertext = openssl_encrypt($str, $cipher, $key, 0, $iv);
+            $ciphertext = $iv . $ciphertext;
+            return urlencode($ciphertext);
         }
     }
 
@@ -209,20 +203,13 @@ class FileLister {
 
         $key = md5($key);
 
-        /* open module, create IV */
-        $td = mcrypt_module_open('des','','cfb','');
-        $key = substr($key,0,mcrypt_enc_get_key_size($td));
-        $iv_size = mcrypt_enc_get_iv_size($td);
-        $iv = substr($str,0,$iv_size);
-        $str = substr($str,$iv_size);
-
-        /* initialize encryption handle */
-        if (mcrypt_generic_init($td,$key,$iv) != -1) {
-            /* decrypt data */
-            $c_t = mdecrypt_generic($td,$str);
-            mcrypt_generic_deinit($td);
-            mcrypt_module_close($td);
-            return $c_t;
+        $cipher = "DES-CFB";
+        if (in_array($cipher, openssl_get_cipher_methods()))
+        {
+            $ivlen = openssl_cipher_iv_length($cipher);
+            $iv = substr($str,0,$ivlen);
+            $str = substr($str,$ivlen);
+            return openssl_decrypt($str, $cipher, $key, 0, $iv);
         }
     }
 
