@@ -180,13 +180,17 @@ class FileLister {
         $key = md5($key); /* to improve variance */
 
         $cipher = "DES-CFB";
-        if (in_array($cipher, openssl_get_cipher_methods()))
-        {
+        $available = openssl_get_cipher_methods();
+        $available = array_map('strtoupper', $available);
+        if (in_array($cipher, $available)) {
             $ivlen = openssl_cipher_iv_length($cipher);
             $iv = openssl_random_pseudo_bytes($ivlen);
             $ciphertext = openssl_encrypt($str, $cipher, $key, 0, $iv);
             $ciphertext = $iv . $ciphertext;
             return urlencode($ciphertext);
+        }
+        else {
+            $this->modx->log(modX::LOG_LEVEL_ERROR, "Cipher {$cipher} is not available on the server, FileLister cannot encrypt string.");
         }
     }
 
@@ -204,12 +208,16 @@ class FileLister {
         $key = md5($key);
 
         $cipher = "DES-CFB";
-        if (in_array($cipher, openssl_get_cipher_methods()))
-        {
+        $available = openssl_get_cipher_methods();
+        $available = array_map('strtoupper', $available);
+        if (in_array($cipher, $available)) {
             $ivlen = openssl_cipher_iv_length($cipher);
             $iv = substr($str,0,$ivlen);
             $str = substr($str,$ivlen);
             return openssl_decrypt($str, $cipher, $key, 0, $iv);
+        }
+        else {
+            $this->modx->log(modX::LOG_LEVEL_ERROR, "Cipher {$cipher} is not available on the server, FileLister cannot decrypt string.");
         }
     }
 
